@@ -1,0 +1,581 @@
+<!-- index.html -->
+<!DOCTYPE html>
+<html lang="en" data-app="Game Backlog Tracker">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="color-scheme" content="light dark" />
+  <meta name="theme-color" content="#111111" />
+  <title>Backlog Atlas — Personal Game Collection</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <header class="app-header" role="banner">
+    <div class="brand" role="navigation">
+      <button class="icon-btn" id="homeBtn" aria-label="Go to games">
+        <svg class="icon"><use href="#icon-logo"></use></svg>
+      </button>
+      <h1 class="app-title" tabindex="0">Backlog Atlas</h1>
+    </div>
+
+    <div class="searchbar" role="search">
+      <svg class="icon"><use href="#icon-search"></use></svg>
+      <input id="globalSearch" type="search" placeholder="Search by title, notes, tags…" autocomplete="off" />
+      <button class="icon-btn subtle" id="clearSearchBtn" aria-label="Clear search" title="Clear">
+        <svg class="icon"><use href="#icon-close"></use></svg>
+      </button>
+    </div>
+
+    <nav class="top-actions" aria-label="Primary">
+      <button class="btn primary" id="addGameBtn">
+        <svg class="icon"><use href="#icon-plus"></use></svg>
+        <span class="label">Add Game</span>
+      </button>
+
+      <button class="icon-btn" id="filterToggleBtn" aria-pressed="false" aria-controls="filtersPanel" aria-expanded="false" title="Filters">
+        <svg class="icon"><use href="#icon-filter"></use></svg>
+      </button>
+
+      <button class="icon-btn" id="themeToggleBtn" aria-label="Toggle theme" title="Toggle theme">
+        <svg class="icon"><use href="#icon-sun"></use></svg>
+      </button>
+
+      <button class="icon-btn" id="tagsBtn" aria-label="Manage tags" title="Manage tags">
+        <svg class="icon"><use href="#icon-tag"></use></svg>
+      </button>
+
+      <button class="icon-btn" id="settingsBtn" aria-label="Settings" title="Settings">
+        <svg class="icon"><use href="#icon-gear"></use></svg>
+      </button>
+    </nav>
+  </header>
+
+  <div id="toolbar" class="toolbar">
+    <div class="sort-controls" role="group" aria-label="Sort controls">
+      <label for="sortField" class="visually-hidden">Sort by</label>
+      <select id="sortField" aria-label="Sort by">
+        <option value="title">Title</option>
+        <option value="releaseDate">Release Date</option>
+        <option value="platform">Platform</option>
+        <option value="status">Status</option>
+        <option value="playtime">Estimated Playtime</option>
+        <option value="dateAdded">Date Added</option>
+        <option value="dateUpdated">Last Updated</option>
+        <option value="favorite">Favorite</option>
+      </select>
+      <button class="icon-btn" id="sortDirBtn" aria-label="Toggle sort direction" title="Toggle sort direction" data-dir="asc">
+        <svg class="icon"><use href="#icon-sort"></use></svg>
+      </button>
+
+      <div class="divider" role="separator" aria-orientation="vertical"></div>
+
+      <button class="icon-btn" id="viewGridBtn" aria-label="Grid view" title="Grid view" aria-pressed="true">
+        <svg class="icon"><use href="#icon-grid"></use></svg>
+      </button>
+      <button class="icon-btn" id="viewListBtn" aria-label="List view" title="List view" aria-pressed="false">
+        <svg class="icon"><use href="#icon-list"></use></svg>
+      </button>
+    </div>
+
+    <div class="summary">
+      <span id="gamesCount">0</span> games
+      <span class="sep">•</span>
+      <span id="activeFiltersSummary">No filters</span>
+    </div>
+  </div>
+
+  <aside id="filtersPanel" class="filters" aria-label="Filters" hidden>
+    <div class="filters-inner">
+      <div class="filters-row">
+        <fieldset>
+          <legend>Platform</legend>
+          <div id="filterPlatforms" class="chipset"></div>
+        </fieldset>
+        <fieldset>
+          <legend>Status</legend>
+          <div id="filterStatuses" class="chipset"></div>
+        </fieldset>
+        <fieldset>
+          <legend>Playtime</legend>
+          <div id="filterPlaytimes" class="chipset"></div>
+        </fieldset>
+        <fieldset>
+          <legend>Tags</legend>
+          <div id="filterTags" class="chipset scrollable"></div>
+        </fieldset>
+      </div>
+      <div class="filters-actions">
+        <label class="switch">
+          <input type="checkbox" id="filterFavoritesOnly" />
+          <span class="slider"></span>
+          <span class="label">Favorites only</span>
+        </label>
+        <div class="spacer"></div>
+        <button class="btn subtle" id="clearFiltersBtn">Clear</button>
+        <button class="btn" id="applyFiltersBtn">Apply</button>
+      </div>
+    </div>
+  </aside>
+
+  <main id="main" class="main">
+    <!-- ROUTES -->
+    <section id="view-games" class="route" data-route="games" aria-label="Games list" tabindex="-1">
+      <div id="emptyState" class="empty" hidden>
+        <div class="empty-hero">
+          <svg class="icon xl"><use href="#icon-empty"></use></svg>
+        </div>
+        <h2>No games yet</h2>
+        <p>Add your first game to start tracking your backlog.</p>
+        <button class="btn primary" id="emptyAddBtn">
+          <svg class="icon"><use href="#icon-plus"></use></svg>
+          Add Game
+        </button>
+      </div>
+
+      <div id="gamesContainer" class="grid" role="list" aria-label="Games"></div>
+
+      <template id="gameCardTemplate">
+        <article class="game-card" role="listitem">
+          <a class="cover-link" href="#">
+            <div class="cover ratio-2x3">
+              <img loading="lazy" alt="" />
+              <div class="cover-fallback">
+                <svg class="icon"><use href="#icon-image"></use></svg>
+              </div>
+              <div class="ribbon" data-status=""></div>
+              <button class="fav-btn icon-btn" title="Toggle favorite" aria-label="Toggle favorite">
+                <svg class="icon"><use href="#icon-heart"></use></svg>
+              </button>
+            </div>
+          </a>
+          <div class="card-body">
+            <div class="title-row">
+              <h3 class="title"></h3>
+              <span class="platform-badge"></span>
+            </div>
+            <div class="meta">
+              <span class="status-chip"></span>
+              <span class="dot">•</span>
+              <span class="playtime-chip"></span>
+            </div>
+            <div class="tags-row"></div>
+            <div class="actions">
+              <button class="icon-btn small more-btn" title="Quick actions" aria-label="Quick actions">
+                <svg class="icon"><use href="#icon-dots"></use></svg>
+              </button>
+            </div>
+          </div>
+        </article>
+      </template>
+
+      <menu id="quickActionsMenu" class="menu" hidden>
+        <button data-action="cycleStatus">Cycle status</button>
+        <button data-action="markPlayed">Mark Played</button>
+        <button data-action="toggleFavorite">Toggle Favorite</button>
+        <hr />
+        <button data-action="edit">Edit</button>
+        <button data-action="delete" class="danger">Delete</button>
+      </menu>
+    </section>
+
+    <section id="view-details" class="route" data-route="game" aria-label="Game details" tabindex="-1" hidden>
+      <div class="details-header">
+        <button class="btn subtle backBtn">
+          <svg class="icon"><use href="#icon-back"></use></svg>
+          Back
+        </button>
+        <div class="header-actions">
+          <button class="icon-btn" id="detailsFavBtn" title="Toggle favorite" aria-label="Toggle favorite">
+            <svg class="icon"><use href="#icon-heart"></use></svg>
+          </button>
+          <button class="btn" id="editGameBtn">
+            <svg class="icon"><use href="#icon-edit"></use></svg>
+            Edit
+          </button>
+        </div>
+      </div>
+
+      <div class="details-hero">
+        <div class="cover ratio-2x3 lg">
+          <img id="detailsCover" alt="Game cover" />
+          <div class="cover-fallback">
+            <svg class="icon"><use href="#icon-image"></use></svg>
+          </div>
+          <div class="ribbon" id="detailsRibbon"></div>
+        </div>
+
+        <div class="details-info">
+          <h2 id="detailsTitle">Title</h2>
+          <div class="detail-line">
+            <span class="badge" id="detailsPlatform">Platform</span>
+            <span class="sep">•</span>
+            <span id="detailsReleaseDate">Release date</span>
+          </div>
+          <div class="detail-line">
+            <span class="chip" id="detailsStatus">Status</span>
+            <span class="sep">•</span>
+            <span class="chip" id="detailsPlaytime">Playtime</span>
+          </div>
+          <div class="tags-row" id="detailsTags"></div>
+
+          <div class="quick-status">
+            <label for="detailsStatusSelect">Set status</label>
+            <select id="detailsStatusSelect"></select>
+            <button class="btn" id="detailsSaveStatusBtn">Save</button>
+          </div>
+        </div>
+      </div>
+
+      <section class="notes-section">
+        <header>
+          <h3>Notes</h3>
+          <div class="notes-actions">
+            <span id="notesSavedIndicator" class="muted">Saved</span>
+          </div>
+        </header>
+        <textarea id="detailsNotes" rows="10" placeholder="Add your notes here…"></textarea>
+        <div class="notes-footer">
+          <button class="btn" id="saveNotesBtn">
+            <svg class="icon"><use href="#icon-save"></use></svg>
+            Save Notes
+          </button>
+        </div>
+      </section>
+    </section>
+
+    <section id="view-form" class="route" data-route="form" aria-label="Add or edit game" tabindex="-1" hidden>
+      <form id="gameForm" novalidate>
+        <header class="form-header">
+          <button type="button" class="btn subtle backBtn">
+            <svg class="icon"><use href="#icon-back"></use></svg>
+            Back
+          </button>
+          <h2 id="formTitle">Add Game</h2>
+          <div class="header-actions">
+            <button type="submit" class="btn primary" id="saveGameBtn">
+              <svg class="icon"><use href="#icon-save"></use></svg>
+              Save
+            </button>
+          </div>
+        </header>
+
+        <div class="form-grid">
+          <div class="form-col">
+            <div class="field">
+              <label for="titleInput">Title <span class="req">*</span></label>
+              <input id="titleInput" name="title" type="text" placeholder="e.g., The Legend of Zelda: Tears of the Kingdom" required />
+              <div class="field-hint">Enter the full title.</div>
+            </div>
+
+            <div class="field two-col">
+              <div>
+                <label for="platformSelect">Platform <span class="req">*</span></label>
+                <select id="platformSelect" name="platform" required>
+                  <!-- Populated via JS from constant -->
+                </select>
+              </div>
+              <div>
+                <label for="releaseDateInput">Release Date</label>
+                <input id="releaseDateInput" name="releaseDate" type="date" />
+              </div>
+            </div>
+
+            <div class="field two-col">
+              <div>
+                <label for="statusSelect">Completion Status <span class="req">*</span></label>
+                <select id="statusSelect" name="status" required>
+                  <!-- Populated via JS -->
+                </select>
+              </div>
+              <div>
+                <label for="playtimeSelect">Estimated Playtime <span class="req">*</span></label>
+                <select id="playtimeSelect" name="playtime" required>
+                  <!-- Populated via JS -->
+                </select>
+              </div>
+            </div>
+
+            <div class="field">
+              <label for="tagsMulti">Tags</label>
+              <div class="tag-multiselect" id="tagsMulti">
+                <input type="text" id="tagQuickAdd" placeholder="Type to add or select…" aria-label="Quick add tag" />
+                <div class="options" id="tagOptions"><!-- saved tags rendered here --></div>
+                <div class="selected" id="tagSelected"><!-- selected tags rendered here --></div>
+              </div>
+              <div class="field-hint">Tags help with filtering (e.g., JRPG, Co-op, Back-compatible).</div>
+              <div class="inline-actions">
+                <button type="button" class="btn subtle" id="manageTagsFromFormBtn">
+                  <svg class="icon"><use href="#icon-tag"></use></svg>
+                  Manage Tags
+                </button>
+              </div>
+            </div>
+
+            <div class="field">
+              <label for="notesInput">Notes</label>
+              <textarea id="notesInput" name="notes" rows="6" placeholder="Anything you want to remember…"></textarea>
+            </div>
+
+            <div class="field checkbox-row">
+              <label class="switch">
+                <input type="checkbox" id="favoriteInput" name="favorite" />
+                <span class="slider"></span>
+                <span class="label">Mark as favorite</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="form-col">
+            <div class="field">
+              <label for="imageUrlInput">Cover Image URL (600×900 recommended)</label>
+              <input id="imageUrlInput" name="imageUrl" type="url" placeholder="https://example.com/cover.jpg" />
+              <div class="field-hint">Remote image links supported. A placeholder will be used if left blank.</div>
+            </div>
+
+            <div class="preview">
+              <div class="cover ratio-2x3 lg">
+                <img id="imagePreview" alt="Cover preview" />
+                <div class="cover-fallback">
+                  <svg class="icon"><use href="#icon-image"></use></svg>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-footer">
+              <button type="button" class="btn subtle" id="cancelFormBtn">Cancel</button>
+              <button type="submit" class="btn primary">
+                <svg class="icon"><use href="#icon-save"></use></svg>
+                Save Game
+              </button>
+            </div>
+          </div>
+        </div>
+      </form>
+    </section>
+
+    <section id="view-tags" class="route" data-route="tags" aria-label="Manage tags" tabindex="-1" hidden>
+      <header class="form-header">
+        <button class="btn subtle backBtn">
+          <svg class="icon"><use href="#icon-back"></use></svg>
+          Back
+        </button>
+        <h2>Tags</h2>
+        <div class="header-actions">
+          <button class="btn" id="addTagBtn">
+            <svg class="icon"><use href="#icon-plus"></use></svg>
+            Add Tag
+          </button>
+        </div>
+      </header>
+
+      <div class="tags-manager">
+        <div id="tagsList" class="tags-list"><!-- tags rendered here --></div>
+
+        <template id="tagRowTemplate">
+          <div class="tag-row" data-id="">
+            <div class="color-swatch">
+              <input type="color" class="tag-color" value="#8899aa" aria-label="Tag color" />
+            </div>
+            <input type="text" class="tag-name" placeholder="Tag name" />
+            <input type="text" class="tag-emoji" placeholder="Emoji (optional)" maxlength="2" />
+            <div class="row-actions">
+              <button class="icon-btn small save-tag" title="Save tag" aria-label="Save tag">
+                <svg class="icon"><use href="#icon-save"></use></svg>
+              </button>
+              <button class="icon-btn small delete-tag" title="Delete tag" aria-label="Delete tag">
+                <svg class="icon"><use href="#icon-trash"></use></svg>
+              </button>
+            </div>
+          </div>
+        </template>
+
+        <div class="footnote">
+          Tip: Use colors and emoji to make tags easier to scan in the list.
+        </div>
+      </div>
+    </section>
+
+    <section id="view-settings" class="route" data-route="settings" aria-label="Settings and data" tabindex="-1" hidden>
+      <header class="form-header">
+        <button class="btn subtle backBtn">
+          <svg class="icon"><use href="#icon-back"></use></svg>
+          Back
+        </button>
+        <h2>Settings</h2>
+      </header>
+
+      <div class="settings">
+        <section class="settings-section">
+          <h3>Appearance</h3>
+          <div class="row">
+            <label for="themeSelect">Theme</label>
+            <select id="themeSelect">
+              <option value="system">System</option>
+              <option value="light">Light</option>
+              <option value="dark">Dark</option>
+            </select>
+          </div>
+        </section>
+
+        <section class="settings-section">
+          <h3>Data</h3>
+          <div class="row">
+            <button class="btn" id="exportBtn">
+              <svg class="icon"><use href="#icon-download"></use></svg>
+              Export JSON
+            </button>
+            <button class="btn" id="importBtn">
+              <svg class="icon"><use href="#icon-upload"></use></svg>
+              Import JSON
+            </button>
+            <input type="file" id="importFile" accept="application/json" hidden />
+          </div>
+          <div class="row">
+            <button class="btn subtle" id="loadSamplesBtn">
+              <svg class="icon"><use href="#icon-sparkles"></use></svg>
+              Load sample data
+            </button>
+            <button class="btn danger" id="resetDataBtn">
+              <svg class="icon"><use href="#icon-trash"></use></svg>
+              Reset all data
+            </button>
+          </div>
+          <div class="row muted" id="storageInfo">Storage: calculating…</div>
+        </section>
+
+        <section class="settings-section">
+          <h3>About</h3>
+          <p>Backlog Atlas is a personal, offline-first tracker for your video game collection. Data is stored locally in your browser.</p>
+        </section>
+      </div>
+    </section>
+  </main>
+
+  <button id="fabAdd" class="fab" aria-label="Add game">
+    <svg class="icon"><use href="#icon-plus"></use></svg>
+  </button>
+
+  <div id="toastContainer" aria-live="polite" aria-atomic="true"></div>
+
+  <!-- Simple modal dialog -->
+  <dialog id="confirmDialog">
+    <form method="dialog">
+      <svg class="icon"><use href="#icon-warning"></use></svg>
+      <p id="confirmMessage">Are you sure?</p>
+      <menu>
+        <button value="cancel" class="btn subtle">Cancel</button>
+        <button value="ok" class="btn danger">OK</button>
+      </menu>
+    </form>
+  </dialog>
+
+  <!-- Icons sprite -->
+  <svg xmlns="http://www.w3.org/2000/svg" class="icons-sprite" style="display:none">
+    <symbol id="icon-logo" viewBox="0 0 24 24">
+      <path d="M3 6h6v12H3zM15 3h6v6h-6zM15 15h6v6h-6z" />
+    </symbol>
+
+    <symbol id="icon-search" viewBox="0 0 24 24">
+      <path d="M10 4a6 6 0 1 1 0 12 6 6 0 0 1 0-12m8.32 12.91 3.39 3.39-1.41 1.41-3.39-3.39A8.96 8.96 0 0 1 10 20a9 9 0 1 1 0-18 9 9 0 0 1 8.32 14.91z"/>
+    </symbol>
+
+    <symbol id="icon-plus" viewBox="0 0 24 24">
+      <path d="M11 11V5h2v6h6v2h-6v6h-2v-6H5v-2h6z"/>
+    </symbol>
+
+    <symbol id="icon-filter" viewBox="0 0 24 24">
+      <path d="M3 5h18v2H3zm4 6h10v2H7zm3 6h4v2h-4z"/>
+    </symbol>
+
+    <symbol id="icon-sun" viewBox="0 0 24 24">
+      <path d="M6.76 4.84l-1.8-1.79L3.17 4.84l1.79 1.79zM1 13h3v-2H1zm10-9h2V1h-2zm7.03 2.05 1.79-1.79-1.79-1.79-1.79 1.79zM20 13h3v-2h-3zM6.76 19.16l-1.8 1.79 1.79 1.79 1.79-1.79zM11 23h2v-3h-2zM18.36 19.16l1.79 1.79 1.79-1.79-1.79-1.79zM12 7a5 5 0 1 1 0 10A5 5 0 0 1 12 7z"/>
+    </symbol>
+
+    <symbol id="icon-moon" viewBox="0 0 24 24">
+      <path d="M21 12.79A9 9 0 1 1 11.21 3a7 7 0 1 0 9.79 9.79z"/>
+    </symbol>
+
+    <symbol id="icon-tag" viewBox="0 0 24 24">
+      <path d="M21.41 11.58 12.42 2.59A2 2 0 0 0 11 2H4a2 2 0 0 0-2 2v7a2 2 0 0 0 .59 1.41l8.99 8.99a2 2 0 0 0 2.83 0l6-6a2 2 0 0 0 0-2.82zM7.5 7a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3z"/>
+    </symbol>
+
+    <symbol id="icon-gear" viewBox="0 0 24 24">
+      <path d="M19.14 12.94a7.07 7.07 0 0 0 .05-.94 7.07 7.07 0 0 0-.05-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.6-.22l-2.39.96a7.39 7.39 0 0 0-1.63-.94l-.36-2.54a.5.5 0 0 0-.5-.42h-3.84a.5.5 0 0 0-.5.42l-.36 2.54a7.39 7.39 0 0 0-1.63.94l-2.39-.96a.5.5 0 0 0-.6.22L2.66 7.84a.5.5 0 0 0 .12.64l2.03 1.58c-.03.31-.05.62-.05.94s.02.63.05.94L2.78 13.52a.5.5 0 0 0-.12.64l1.92 3.32a.5.5 0 0 0 .6.22l2.39-.96c.5.38 1.05.7 1.63.94l.36 2.54a.5.5 0 0 0 .5.42h3.84a.5.5 0 0 0 .5-.42l.36-2.54c.58-.24 1.13-.56 1.63-.94l2.39.96a.5.5 0 0 0 .6-.22l1.92-3.32a.5.5 0 0 0-.12-.64l-2.03-1.58zM12 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7z"/>
+    </symbol>
+
+    <symbol id="icon-close" viewBox="0 0 24 24">
+      <path d="M18.3 5.71 12 12l6.3 6.29-1.41 1.42L10.59 13.4 4.3 19.71 2.89 18.3 9.17 12 2.89 5.71 4.3 4.29 10.59 10.6l6.3-6.3z"/>
+    </symbol>
+
+    <symbol id="icon-sort" viewBox="0 0 24 24">
+      <path d="M7 3h2v14h3l-4 4-4-4h3zM17 21h-2V7h-3l4-4 4 4h-3z"/>
+    </symbol>
+
+    <symbol id="icon-grid" viewBox="0 0 24 24">
+      <path d="M3 3h8v8H3zM13 3h8v8h-8zM3 13h8v8H3zM13 13h8v8h-8z"/>
+    </symbol>
+
+    <symbol id="icon-list" viewBox="0 0 24 24">
+      <path d="M4 6h16v2H4zM4 11h16v2H4zM4 16h16v2H4z"/>
+    </symbol>
+
+    <symbol id="icon-empty" viewBox="0 0 24 24">
+      <path d="M7 7h10a3 3 0 0 1 3 3v2h-2v-2a1 1 0 0 0-1-1h-2v3h-6V9H8a1 1 0 0 0-1 1v2H5v-2a3 3 0 0 1 2-3zM6 15h12a2 2 0 0 1 2 2v2H4v-2a2 2 0 0 1 2-2zm4.5 2a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3zm7 0a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3z"/>
+    </symbol>
+
+    <symbol id="icon-image" viewBox="0 0 24 24">
+      <path d="M21 5H3a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h18a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2zM3 7h18v10H3V7zm3 8 4-5 3 4 2-3 6 8H3l3-4zM8 9a2 2 0 1 1 0-4 2 2 0 0 1 0 4z"/>
+    </symbol>
+
+    <symbol id="icon-heart" viewBox="0 0 24 24">
+      <path d="M12.1 21.35 10 19.28C5.4 14.92 2 11.77 2 8.5A4.5 4.5 0 0 1 6.5 4 5.3 5.3 0 0 1 12 6.09 5.3 5.3 0 0 1 17.5 4 4.5 4.5 0 0 1 22 8.5c0 3.27-3.4 6.42-8 10.78l-1.9 2.07z"/>
+    </symbol>
+
+    <symbol id="icon-dots" viewBox="0 0 24 24">
+      <path d="M12 6a2 2 0 1 1 0-4 2 2 0 0 1 0 4zM12 14a2 2 0 1 1 0-4 2 2 0 0 1 0 4zM12 22a2 2 0 1 1 0-4 2 2 0 0 1 0 4z"/>
+    </symbol>
+
+    <symbol id="icon-back" viewBox="0 0 24 24">
+      <path d="M15.41 7.41 14 6l-6 6 6 6 1.41-1.41L10.83 12z"/>
+    </symbol>
+
+    <symbol id="icon-edit" viewBox="0 0 24 24">
+      <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+    </symbol>
+
+    <symbol id="icon-save" viewBox="0 0 24 24">
+      <path d="M17 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7l-4-4zM6 5h9v4H6V5zm6 14a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"/>
+    </symbol>
+
+    <symbol id="icon-warning" viewBox="0 0 24 24">
+      <path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/>
+    </symbol>
+
+    <symbol id="icon-download" viewBox="0 0 24 24">
+      <path d="M5 20h14v-2H5v2zM12 2v12l4-4 1.41 1.41L12 17.83l-5.41-5.42L8 10l4 4V2h0z"/>
+    </symbol>
+
+    <symbol id="icon-upload" viewBox="0 0 24 24">
+      <path d="M5 20h14v-2H5v2zM12 22V10l-4 4-1.41-1.41L12 6.17l5.41 5.42L16 14l-4-4v12z"/>
+    </symbol>
+
+    <symbol id="icon-sparkles" viewBox="0 0 24 24">
+      <path d="M5 3l1.5 3L10 7.5 6.5 9 5 12 3.5 9 0 7.5 3.5 6 5 3zm11 1 2 4 4 2-4 2-2 4-2-4-4-2 4-2 2-4zm-5 9 1.2 2.4L15 16l-2.8.6L11 19l-1.2-2.4L7 16l2.8-.6L11 13z"/>
+    </symbol>
+
+    <symbol id="icon-trash" viewBox="0 0 24 24">
+      <path d="M6 7h12l-1 14H7L6 7zm12-3h-4l-1-1h-2l-1 1H6v2h12V4z"/>
+    </symbol>
+  </svg>
+
+  <noscript>
+    <div style="padding:1rem; background:#fee; color:#900; text-align:center">
+      Backlog Atlas requires JavaScript to run. Please enable JavaScript in your browser.
+    </div>
+  </noscript>
+
+  <script src="app.js"></script>
+</body>
+</html>
